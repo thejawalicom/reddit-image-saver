@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "Reddit Image Saver",
+  "version": "1.0.0",
+  "description": "Save Reddit images in original format and full resolution. Bypasses preview pages, stops WebP conversion, and upgrades to HD originals.",
+  "default_locale": "en",
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "activeTab",
+    "contextMenus",
+    "downloads",
+    "storage",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "*://*.redd.it/*",
+    "*://www.reddit.com/*",
+    "*://old.reddit.com/*",
+    "*://sh.reddit.com/*",
+    "*://new.reddit.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.reddit.com/*",
+        "*://old.reddit.com/*",
+        "*://sh.reddit.com/*",
+        "*://new.reddit.com/*"
+      ],
+      "js": [
+        "shared/constants.js",
+        "shared/url-utils.js",
+        "content/gallery-detector.js",
+        "content/image-enhancer.js",
+        "content/content.js"
+      ],
+      "css": [
+        "content/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "options/options.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": [
+        "*://www.reddit.com/*",
+        "*://old.reddit.com/*",
+        "*://sh.reddit.com/*",
+        "*://new.reddit.com/*"
+      ]
+    }
+  ]
+}

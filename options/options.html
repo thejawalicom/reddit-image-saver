@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Image Saver - Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options">
+    <header class="header">
+      <img src="../icons/icon48.png" alt="" width="32" height="32">
+      <div>
+        <h1>Reddit Image Saver</h1>
+        <p class="header__subtitle">Extension Settings</p>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Core Settings -->
+      <section class="card">
+        <h2 class="card__title">Core Settings</h2>
+
+        <div class="option">
+          <div class="option__info">
+            <label class="option__label" for="opt-enabled">Enable Extension</label>
+            <p class="option__desc">Master switch to enable or disable all extension features</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="opt-enabled" checked>
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+
+        <div class="option">
+          <div class="option__info">
+            <label class="option__label" for="opt-prefer-original">Prefer Original Images</label>
+            <p class="option__desc">Automatically upgrade preview.redd.it URLs to original i.redd.it URLs</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="opt-prefer-original" checked>
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+
+        <div class="option">
+          <div class="option__info">
+            <label class="option__label" for="opt-auto-redirect">Auto-Redirect</label>
+            <p class="option__desc">Automatically redirect media wrapper pages and preview URLs to direct images</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="opt-auto-redirect" checked>
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+
+        <div class="option">
+          <div class="option__info">
+            <label class="option__label" for="opt-prevent-webp">Prevent WebP Conversion</label>
+            <p class="option__desc">Force Reddit to serve original PNG/JPEG instead of converting to WebP</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="opt-prevent-webp" checked>
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- UI Settings -->
+      <section class="card">
+        <h2 class="card__title">On-Page UI</h2>
+
+        <div class="option">
+          <div class="option__info">
+            <label class="option__label" for="opt-show-hd-badge">Show HD Badges</label>
+            <p class="option__desc">Display an "HD" badge on images where original quality is available</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="opt-show-hd-badge" checked>
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+
+        <div class="option">
+          <div class="option__info">
+            <label class="option__label" for="opt-show-download-btn">Show Download Buttons</label>
+            <p class="option__desc">Display a download button overlay on Reddit images</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="opt-show-download-btn" checked>
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+
+        <div class="option">
+          <div class="option__info">
+            <label class="option__label" for="opt-gallery-auto-detect">Auto-Detect Galleries</label>
+            <p class="option__desc">Automatically detect gallery posts and enable batch download</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="opt-gallery-auto-detect" checked>
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="card">
+        <h2 class="card__title">Actions</h2>
+        <div class="actions">
+          <button class="btn btn--secondary" id="btn-reset">Reset to Defaults</button>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section class="card">
+        <h2 class="card__title">About</h2>
+        <p class="about__text">
+          Reddit Image Saver v1.0.0<br>
+          Save Reddit images in original format and full resolution.<br>
+          This extension does not collect any user data.
+        </p>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" hidden>Settings saved</div>
+  </div>
+
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

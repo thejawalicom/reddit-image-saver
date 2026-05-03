@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Image Saver</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <!-- Header -->
+    <header class="header">
+      <div class="header__title">
+        <img src="../icons/icon32.png" alt="" class="header__icon" width="24" height="24">
+        <h1>Reddit Image Saver</h1>
+      </div>
+      <label class="toggle" aria-label="Enable or disable extension">
+        <input type="checkbox" id="toggle-enabled" checked>
+        <span class="toggle__slider"></span>
+      </label>
+    </header>
+
+    <!-- Status Bar -->
+    <div class="status" id="status-bar">
+      <span class="status__dot status__dot--active"></span>
+      <span class="status__text" id="status-text">Active</span>
+    </div>
+
+    <!-- Page Info Section -->
+    <section class="section" id="page-info-section">
+      <h2 class="section__title">Current Page</h2>
+      <div class="info-grid" id="page-info">
+        <div class="info-item">
+          <span class="info-item__label">Images found</span>
+          <span class="info-item__value" id="image-count">—</span>
+        </div>
+        <div class="info-item">
+          <span class="info-item__label">Gallery</span>
+          <span class="info-item__value" id="gallery-status">—</span>
+        </div>
+      </div>
+      <button class="btn btn--primary" id="btn-download-all" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download All HD Images
+      </button>
+    </section>
+
+    <!-- Settings Section -->
+    <section class="section">
+      <h2 class="section__title">Settings</h2>
+      <div class="settings-list">
+        <label class="setting">
+          <span class="setting__text">Prefer original (i.redd.it)</span>
+          <input type="checkbox" id="setting-prefer-original" class="setting__checkbox">
+          <span class="toggle__slider toggle__slider--small"></span>
+        </label>
+        <label class="setting">
+          <span class="setting__text">Auto-redirect previews</span>
+          <input type="checkbox" id="setting-auto-redirect" class="setting__checkbox">
+          <span class="toggle__slider toggle__slider--small"></span>
+        </label>
+        <label class="setting">
+          <span class="setting__text">Prevent WebP conversion</span>
+          <input type="checkbox" id="setting-prevent-webp" class="setting__checkbox">
+          <span class="toggle__slider toggle__slider--small"></span>
+        </label>
+        <label class="setting">
+          <span class="setting__text">Show HD badges</span>
+          <input type="checkbox" id="setting-show-hd-badge" class="setting__checkbox">
+          <span class="toggle__slider toggle__slider--small"></span>
+        </label>
+        <label class="setting">
+          <span class="setting__text">Show download buttons</span>
+          <input type="checkbox" id="setting-show-download-btn" class="setting__checkbox">
+          <span class="toggle__slider toggle__slider--small"></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span class="footer__version">v1.0.0</span>
+      <a href="#" class="footer__link" id="link-options">More Options</a>
+    </footer>
+  </div>
+
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/url-utils.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
