@@ -51,8 +51,8 @@ const ImageEnhancer = {
     this._enhanced.add(container);
     container.setAttribute('data-ris-enhanced', 'true');
 
-    // Find the best image URL from this post
-    const imageUrl = this._findBestImageUrl(container);
+    // Find the best image info from this post
+    const { url: imageUrl, element: imgElement } = this._findBestImageInfo(container);
     if (!imageUrl) return;
 
     // Check if this is a gallery post (has carousel/navigation)
@@ -69,9 +69,14 @@ const ImageEnhancer = {
     const btnBar = document.createElement('div');
     btnBar.className = 'ris-download-bar';
 
+    // Dimension display (left side)
+    const dimDisplay = document.createElement('span');
+    dimDisplay.className = 'ris-dimensions';
+    btnBar.appendChild(dimDisplay);
+
     // Button 1: Download current image (always shown)
     const dlBtn = this._createDownloadButton(
-      isGallery ? 'Download This' : 'Download HD',
+      'Download',
       downloadUrl,
       filename
     );
@@ -85,6 +90,41 @@ const ImageEnhancer = {
 
     // Insert the button bar BEFORE the media container
     container.parentNode.insertBefore(btnBar, container);
+
+    // Populate dimensions
+    console.log('[Reddit Image Saver] Post enhanced - isGallery:', isGallery, 'postId:', postId, 'url:', imageUrl);
+    if (isGallery && postId) {
+      this._getGalleryDimensions(postId).then(dims => {
+        console.log('[Reddit Image Saver] Gallery dimensions result:', dims);
+        if (dims.length > 0) {
+          dims.forEach((d, i) => {
+            const badge = document.createElement('span');
+            badge.className = 'ris-dim-badge';
+            badge.textContent = d ? `${i + 1}. ${d.width}×${d.height}` : `${i + 1}. ?`;
+            dimDisplay.appendChild(badge);
+          });
+        }
+      }).catch(err => {
+        console.error('[Reddit Image Saver] Gallery dimensions promise rejected:', err);
+      });
+    } else {
+      // Single image: use element dimensions if already loaded, else load
+      if (imgElement && imgElement.naturalWidth > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'ris-dim-badge';
+        badge.textContent = `${imgElement.naturalWidth}×${imgElement.naturalHeight}`;
+        dimDisplay.appendChild(badge);
+      } else {
+        this._getImageDimensions(downloadUrl).then(dim => {
+          if (dim) {
+            const badge = document.createElement('span');
+            badge.className = 'ris-dim-badge';
+            badge.textContent = `${dim.width}×${dim.height}`;
+            dimDisplay.appendChild(badge);
+          }
+        });
+      }
+    }
 
     // For gallery posts, update the "Download This" button when user swipes
     if (isGallery) {
@@ -237,7 +277,7 @@ const ImageEnhancer = {
         if (metadata.s) {
           const rawUrl = metadata.s.u || metadata.s.gif;
           if (rawUrl) {
-            imageUrl = rawUrl.replace(/&amp;/g, '&');
+            imageUrl = rawUrl.replace(/&/g, '&');
           }
         }
 
@@ -364,29 +404,52 @@ const ImageEnhancer = {
 
     const btnBar = document.createElement('div');
     btnBar.className = 'ris-download-bar';
-    btnBar.appendChild(this._createDownloadButton('Download HD', downloadUrl, filename));
+
+    // Dimension display
+    const dimDisplay = document.createElement('span');
+    dimDisplay.className = 'ris-dimensions';
+    btnBar.appendChild(dimDisplay);
+
+    btnBar.appendChild(this._createDownloadButton('Download', downloadUrl, filename));
 
     const target = img.closest('a') || img;
     target.parentNode.insertBefore(btnBar, target);
+
+    // Show dimensions
+    if (img.naturalWidth > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'ris-dim-badge';
+      badge.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
+      dimDisplay.appendChild(badge);
+    } else {
+      this._getImageDimensions(downloadUrl).then(dim => {
+        if (dim) {
+          const badge = document.createElement('span');
+          badge.className = 'ris-dim-badge';
+          badge.textContent = `${dim.width}×${dim.height}`;
+          dimDisplay.appendChild(badge);
+        }
+      });
+    }
   },
 
   /**
-   * Find the best image URL from a post container.
+   * Find the best image info (URL + element) from a post container.
    * @param {Element} container
-   * @returns {string|null}
+   * @returns {{url: string|null, element: Element|null}}
    */
-  _findBestImageUrl(container) {
+  _findBestImageInfo(container) {
     // Priority 1: Main post image (not background blur)
     const mainImg = container.querySelector(
       'img.preview-img, img.media-lightbox-img:not(.post-background-image-filter)'
     );
-    if (mainImg?.src) return mainImg.src;
+    if (mainImg?.src) return { url: mainImg.src, element: mainImg };
 
     // Priority 2: Any redd.it img (not background)
     const imgs = container.querySelectorAll('img[src*="redd.it"]');
     for (const img of imgs) {
       if (!img.classList.contains('post-background-image-filter') && img.src) {
-        return img.src;
+        return { url: img.src, element: img };
       }
     }
 
@@ -395,10 +458,74 @@ const ImageEnhancer = {
     if (imgWithSrcset?.srcset) {
       const parts = imgWithSrcset.srcset.split(',');
       const last = parts[parts.length - 1].trim().split(' ')[0];
-      if (last) return last;
+      if (last) return { url: last, element: imgWithSrcset };
     }
 
-    return null;
+    return { url: null, element: null };
+  },
+
+  /**
+   * Find the best image URL from a post container.
+   * @param {Element} container
+   * @returns {string|null}
+   */
+  _findBestImageUrl(container) {
+    return this._findBestImageInfo(container).url;
+  },
+
+  /**
+   * Get image dimensions by loading it.
+   * @param {string} url
+   * @returns {Promise<{width: number, height: number}|null>}
+   */
+  async _getImageDimensions(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  },
+
+  /**
+   * Get dimensions for all gallery images from Reddit API.
+   * @param {string} postId
+   * @returns {Promise<Array<{width: number, height: number}|null>>}
+   */
+  async _getGalleryDimensions(postId) {
+    try {
+      const response = await fetch(
+        `https://www.reddit.com/comments/${postId}.json`,
+        { headers: { 'Accept': 'application/json' } }
+      );
+      if (!response.ok) {
+        console.warn('[Reddit Image Saver] Gallery dimensions fetch failed:', response.status);
+        return [];
+      }
+
+      const data = await response.json();
+      const post = data[0]?.data?.children?.[0]?.data;
+      if (!post?.gallery_data || !post?.media_metadata) {
+        console.warn('[Reddit Image Saver] No gallery_data or media_metadata for post', postId, 'post keys:', Object.keys(post || {}));
+        return [];
+      }
+
+      const items = post.gallery_data.items || [];
+      const dimensions = [];
+      for (const item of items) {
+        const metadata = post.media_metadata[item.media_id];
+        if (metadata?.s) {
+          dimensions.push({ width: metadata.s.x, height: metadata.s.y });
+        } else {
+          dimensions.push(null);
+        }
+      }
+      console.log('[Reddit Image Saver] Gallery dimensions for', postId, ':', dimensions);
+      return dimensions;
+    } catch (err) {
+      console.error('[Reddit Image Saver] Gallery dimensions error:', err);
+      return [];
+    }
   },
 
   /**
