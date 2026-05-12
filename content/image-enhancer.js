@@ -75,8 +75,9 @@ const ImageEnhancer = {
     btnBar.appendChild(dimDisplay);
 
     // Button 1: Download current image (always shown)
+    // For gallery posts, label as "Download 1st image" to clarify it only downloads the first image
     const dlBtn = this._createDownloadButton(
-      'Download',
+      isGallery ? 'Download 1st image' : 'Download',
       downloadUrl,
       filename
     );
