@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Reddit Image Saver",
   "version": "1.0.0",
-  "description": "Save Reddit images in original format and full resolution. Bypasses preview pages, stops WebP conversion, and upgrades to HD originals.",
+  "description": "Save Reddit images in original format and full resolution. Bypasses preview pages, stops WebP conversion, upgrades to HD.",
   "default_locale": "en",
   "permissions": [
     "declarativeNetRequest",
