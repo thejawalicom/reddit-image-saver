@@ -104,10 +104,11 @@ reddit-image-saver/
 │   ├── constants.js               # Domain lists, regex patterns
 │   └── storage.js                 # Chrome storage wrapper
 ├── icons/
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
+│   ├── Reddit Image Saver_16.png
+│   ├── Reddit Image Saver_32.png
+│   ├── Reddit Image Saver_48.png
+│   ├── Reddit Image Saver_64.png
+│   └── Reddit Image Saver_128.png
 ├── _locales/
 │   └── en/
 │       └── messages.json
