@@ -117,9 +117,3 @@ This extension does not collect any user data. All processing happens locally in
 
 MIT
 
-## Acknowledgments
-
-Inspired by existing extensions:
-- [Reddit Image Opener](https://github.com/denarnold/Reddit-Image-Opener)
-- [View Reddit Images Directly](https://chromewebstore.google.com/detail/view-reddit-images-direct/ifcbbmfoblmmckaacfoeillbkchclfpe)
-- [Display Reddit Images Natively](https://chromewebstore.google.com/detail/display-reddit-images-nat/imiakeaigofbcfdjajmgjfnohjlekndg)
