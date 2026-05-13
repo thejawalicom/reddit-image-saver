@@ -13,6 +13,13 @@
     "storage",
     "webNavigation"
   ],
+  "declarative_net_request_rule_resources": [
+    {
+      "id": "ruleset_1",
+      "enabled": true,
+      "path": "_rules.json"
+    }
+  ],
   "host_permissions": [
     "*://*.redd.it/*",
     "*://www.reddit.com/*",
