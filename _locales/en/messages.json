@@ -4,7 +4,7 @@
     "description": "The name of the extension"
   },
   "extensionDescription": {
-    "message": "Save Reddit images in original format and full resolution. Bypasses preview pages, stops WebP conversion, and upgrades to HD originals.",
+    "message": "Save Reddit images in original format and full resolution. Bypasses preview pages, stops WebP conversion, upgrades to HD.",
     "description": "The description of the extension"
   }
 }
