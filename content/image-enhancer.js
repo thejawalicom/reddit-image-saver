@@ -51,6 +51,12 @@ const ImageEnhancer = {
     this._enhanced.add(container);
     container.setAttribute('data-ris-enhanced', 'true');
 
+    // Skip video posts - download button should not be shown on videos
+    if (this._isVideoPost(container)) {
+      console.log('[Reddit Image Saver] Skipping video post');
+      return;
+    }
+
     // Find the best image info from this post
     const { url: imageUrl, element: imgElement } = this._findBestImageInfo(container);
     if (!imageUrl) return;
@@ -327,6 +333,59 @@ const ImageEnhancer = {
   },
 
   /**
+   * Check if the post is a video post.
+   * @param {Element} container - The media container element
+   * @returns {boolean}
+   */
+  _isVideoPost(container) {
+    // Find the parent post element
+    const post = container.closest('shreddit-post, [data-testid="post-container"], article');
+    const searchArea = post || container.parentElement;
+    if (!searchArea) return false;
+
+    // Check shreddit-post element attributes directly
+    if (post?.tagName === 'SHREDDIT-POST') {
+      const postType = post.getAttribute('post-type');
+      const linkFlair = post.getAttribute('link-flair');
+      const media = post.getAttribute('media');
+      
+      // Check for video post type or media attribute
+      if (postType === 'video' ||
+          postType === 'Hosted:video' ||
+          postType === 'RichVideo' ||
+          media === 'true' ||
+          media === 'video' ||
+          (linkFlair && linkFlair.toLowerCase().includes('video'))) {
+        return true;
+      }
+    }
+
+    // Check for video indicators
+    return !!(
+      // HTML5 video element
+      searchArea.querySelector('video') ||
+      // Reddit's video player component
+      searchArea.querySelector('shreddit-player, video-player, [data-testid="video-player"]') ||
+      // Video indicator in post metadata
+      searchArea.querySelector('[data-testid="post-video-indicator"], .video-indicator') ||
+      // Check for v.redd.it URLs in the post
+      searchArea.querySelector('a[href*="v.redd.it"]') ||
+      // Check for playable video in data attributes
+      container.querySelector('[data-playable="true"][data-type="video"]') ||
+      container.dataset?.type === 'video' ||
+      container.dataset?.mediaType === 'video' ||
+      // Check for video source elements
+      container.querySelector('video source, [src*=".mp4"], [src*=".webm"]') ||
+      // Check container's own attributes
+      container.getAttribute?.('content-type') === 'video' ||
+      container.getAttribute?.('slot')?.includes('video') ||
+      // Check for video-related classes
+      container.classList?.contains('video-container') ||
+      container.classList?.contains('post-video')
+    );
+  },
+
+  /**
    * Extract the post ID from a container's surrounding elements.
    * @param {Element} container
    * @returns {string|null}
@@ -393,6 +452,16 @@ const ImageEnhancer = {
     if (this._enhanced.has(img)) return;
     const rect = img.getBoundingClientRect();
     if (rect.width < 100 || rect.height < 100) return;
+
+    // Skip video thumbnails - check if this is a video-related image
+    const parent = img.closest('article, .post, [data-testid="post-container"]');
+    if (parent) {
+      const isVideoPost = parent.querySelector('video, shreddit-player, [data-testid="video-player"], a[href*="v.redd.it"]');
+      if (isVideoPost) {
+        console.log('[Reddit Image Saver] Skipping video post thumbnail');
+        return;
+      }
+    }
 
     this._enhanced.add(img);
     img.setAttribute('data-ris-enhanced', 'true');
