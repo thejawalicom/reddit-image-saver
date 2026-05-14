@@ -1,25 +1,26 @@
 {
   "manifest_version": 3,
-  "name": "Reddit Image Saver",
+  "name": "__MSG_extensionName__",
   "version": "1.0.0",
-  "description": "Save Reddit images in original format and full resolution. Bypasses preview pages, stops WebP conversion, upgrades to HD.",
+  "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "permissions": [
     "declarativeNetRequest",
-    "declarativeNetRequestFeedback",
     "activeTab",
     "contextMenus",
     "downloads",
     "storage",
     "webNavigation"
   ],
-  "declarative_net_request_rule_resources": [
-    {
-      "id": "ruleset_1",
-      "enabled": true,
-      "path": "_rules.json"
-    }
-  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
   "host_permissions": [
     "*://*.redd.it/*",
     "*://www.reddit.com/*",

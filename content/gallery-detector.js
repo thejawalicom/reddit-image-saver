@@ -38,35 +38,215 @@ const GalleryDetector = {
   },
 
   /**
-   * Fetch gallery images from Reddit's JSON API.
-   * @param {string} [postId] - Post ID, auto-detected if not provided
-   * @returns {Promise<Array<{url: string, filename: string, mediaId: string}>>}
+   * Extract gallery images purely from the DOM (zero network requests).
+   * Scans gallery carousel elements for all rendered images, extracts URLs,
+   * and upgrades them to original i.redd.it format.
+   *
+   * On modern Reddit, the gallery carousel renders ALL slides in the DOM
+   * (hidden with CSS), so all image URLs are available without API calls.
+   *
+   * Falls back to embedded JSON in <script> tags for old Reddit.
+   *
+   * @param {string} [postId] - Post ID for context (unused in DOM mode, kept for API compatibility)
+   * @returns {Array<{url: string, filename: string, mediaId: string}>}
    */
-  async fetchGalleryImages(postId) {
-    postId = postId || this.getPostId();
-    if (!postId) return [];
+  extractGalleryFromDOM(postId) {
+    const images = [];
+    const seen = new Set();
 
-    try {
-      // Fetch post data from Reddit JSON API
-      const response = await fetch(
-        `https://www.reddit.com/comments/${postId}.json`,
-        {
-          headers: {
-            'Accept': 'application/json'
+    // Find the gallery carousel (supports multiple Reddit UI variants)
+    const carouselSelectors = [
+      'gallery-carousel',
+      '[data-testid="gallery-carousel"]',
+      '.gallery-carousel',
+      '.media-gallery'
+    ];
+
+    let carousel = null;
+    for (const sel of carouselSelectors) {
+      carousel = document.querySelector(sel);
+      if (carousel) break;
+    }
+
+    // Method 1: Extract from gallery carousel <img> elements (new Reddit)
+    if (carousel) {
+      // All slides are rendered in the DOM — query all img elements
+      const imgElements = carousel.querySelectorAll('img[src*="redd.it"]');
+
+      for (const img of imgElements) {
+        const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
+        if (!src || seen.has(src)) continue;
+
+        const result = this._urlToGalleryItem(src);
+        if (result) {
+          seen.add(src);
+          images.push(result);
+        }
+      }
+
+      // Also check <source> elements with srcset
+      const sourceElements = carousel.querySelectorAll('source[srcset*="redd.it"]');
+      for (const source of sourceElements) {
+        const srcset = source.getAttribute('srcset');
+        if (!srcset) continue;
+        // Parse srcset: take the highest-resolution URL (last in the list)
+        const parts = srcset.split(',');
+        const lastPart = parts[parts.length - 1].trim().split(' ')[0];
+        if (lastPart && !seen.has(lastPart)) {
+          const result = this._urlToGalleryItem(lastPart);
+          if (result) {
+            seen.add(lastPart);
+            images.push(result);
           }
         }
-      );
+      }
 
-      if (!response.ok) return [];
+      if (images.length > 0) {
+        console.log('[Reddit Image Saver] Extracted', images.length, 'gallery images from DOM carousel');
+        return images;
+      }
+    }
 
-      const data = await response.json();
-      const post = data[0]?.data?.children?.[0]?.data;
-      if (!post) return [];
+    // Method 2: Try embedded JSON data in <script> tags (old Reddit fallback)
+    const scriptImages = this._extractFromEmbeddedJSON();
+    if (scriptImages.length > 0) {
+      console.log('[Reddit Image Saver] Extracted', scriptImages.length, 'gallery images from embedded JSON');
+      return scriptImages;
+    }
 
-      return this._extractGalleryUrls(post);
-    } catch (err) {
-      console.error('[Reddit Image Saver] Gallery fetch error:', err);
-      return [];
+    // Method 3: Scan all Reddit images on the page as last resort
+    const pageImages = this.scanPageImages();
+    for (const img of pageImages) {
+      const result = this._urlToGalleryItem(img.originalUrl);
+      if (result && !seen.has(result.url)) {
+        seen.add(result.url);
+        images.push(result);
+      }
+    }
+
+    console.log('[Reddit Image Saver] Extracted', images.length, 'gallery images from page scan');
+    return images;
+  },
+
+  /**
+   * Try to extract gallery images from embedded JSON in <script> tags.
+   * Reddit sometimes embeds post data in the initial page HTML.
+   * @returns {Array<{url: string, filename: string, mediaId: string}>}
+   */
+  _extractFromEmbeddedJSON() {
+    const images = [];
+
+    // Look for <script id="data" type="application/json"> (old Reddit)
+    const dataScript = document.getElementById('data');
+    if (dataScript && dataScript.type === 'application/json') {
+      try {
+        return this._parseEmbeddedRedditJSON(dataScript.textContent);
+      } catch (e) {
+        // Ignore parse errors, try next method
+      }
+    }
+
+    // Look for <script> tags containing window.___r or __INITIAL_STATE__
+    const scripts = document.querySelectorAll('script:not([src])');
+    for (const script of scripts) {
+      const text = script.textContent || '';
+      // Check for window.___r = {...} pattern (old Reddit)
+      const rMatch = text.match(/window\.___r\s*=\s*(\{.+?\});/s);
+      if (rMatch) {
+        try {
+          return this._parseEmbeddedRedditJSON(rMatch[1]);
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      // Check for __INITIAL_STATE__ pattern
+      const stateMatch = text.match(/__INITIAL_STATE__\s*=\s*(\{.+?\});/s);
+      if (stateMatch) {
+        try {
+          return this._parseEmbeddedRedditJSON(stateMatch[1]);
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+
+    return images;
+  },
+
+  /**
+   * Parse Reddit's embedded JSON data structure and extract gallery image URLs.
+   * Handles both old and new Reddit data formats.
+   * @param {string} jsonText - Raw JSON string
+   * @returns {Array<{url: string, filename: string, mediaId: string}>}
+   */
+  _parseEmbeddedRedditJSON(jsonText) {
+    const images = [];
+    const data = JSON.parse(jsonText);
+    const seen = new Set();
+
+    // New Reddit format: look for gallery_data and media_metadata anywhere in the tree
+    const findGalleryData = (obj, depth) => {
+      if (!obj || typeof obj !== 'object' || depth > 10) return;
+      if (Array.isArray(obj)) {
+        obj.forEach(item => findGalleryData(item, depth + 1));
+        return;
+      }
+
+      if (obj.gallery_data && obj.media_metadata) {
+        const items = obj.gallery_data.items || [];
+        for (const item of items) {
+          const mediaId = item.media_id;
+          const metadata = obj.media_metadata[mediaId];
+          if (!metadata) continue;
+
+          const imageUrl = this._getOriginalFromMetadata(metadata, mediaId);
+          if (imageUrl && !seen.has(imageUrl)) {
+            seen.add(imageUrl);
+            images.push({
+              url: imageUrl,
+              filename: this._buildFilename(mediaId, imageUrl),
+              mediaId
+            });
+          }
+        }
+      }
+
+      // Recurse into children
+      for (const key of Object.keys(obj)) {
+        findGalleryData(obj[key], depth + 1);
+      }
+    };
+
+    findGalleryData(data, 0);
+    return images;
+  },
+
+  /**
+   * Convert an image URL to a gallery item object.
+   * Extracts media ID, builds filename, and upgrades to original URL.
+   * @param {string} url - Raw image URL (preview or original)
+   * @returns {{url: string, filename: string, mediaId: string}|null}
+   */
+  _urlToGalleryItem(url) {
+    if (!url || !UrlUtils.isRedditImageUrl(url)) return null;
+
+    try {
+      // Upgrade preview URL to original i.redd.it URL
+      const bestUrl = UrlUtils.getBestUrl(url);
+
+      // Extract media ID from the URL pathname
+      // e.g., https://i.redd.it/abc123def456.jpg → abc123def456
+      const parsed = new URL(bestUrl);
+      const filename = parsed.pathname.split('/').pop();
+      const mediaId = filename ? filename.split('.')[0] : 'unknown';
+
+      return {
+        url: bestUrl,
+        filename: this._buildFilename(mediaId, bestUrl),
+        mediaId
+      };
+    } catch {
+      return null;
     }
   },
 

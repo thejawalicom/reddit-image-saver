@@ -67,7 +67,7 @@
       }
 
       case MESSAGE_TYPES.GET_GALLERY_IMAGES: {
-        const galleryImages = await GalleryDetector.fetchGalleryImages();
+        const galleryImages = GalleryDetector.extractGalleryFromDOM();
         sendResponse({
           type: MESSAGE_TYPES.GALLERY_IMAGES_RESULT,
           images: galleryImages,
@@ -82,7 +82,7 @@
         let galleryCount = 0;
 
         if (isGallery) {
-          const galleryImages = await GalleryDetector.fetchGalleryImages();
+          const galleryImages = GalleryDetector.extractGalleryFromDOM();
           galleryCount = galleryImages.length;
         }
 

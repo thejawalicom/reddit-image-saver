@@ -190,7 +190,7 @@ const ImageEnhancer = {
 
   /**
    * Create a "Download All" button for gallery posts.
-   * Fetches all gallery images via Reddit JSON API and downloads them.
+   * Extracts all gallery images from the DOM (no network requests).
    * @param {string} postId - Reddit post ID
    * @param {Element} container - The media container element
    * @returns {HTMLButtonElement}
@@ -218,8 +218,8 @@ const ImageEnhancer = {
       if (span) span.textContent = 'Fetching...';
 
       try {
-        // Fetch gallery images from Reddit JSON API
-        const images = await this._fetchGalleryImages(postId);
+        // Extract gallery images purely from DOM (no network requests)
+        const images = GalleryDetector.extractGalleryFromDOM(postId);
         if (images.length === 0) {
           if (span) span.textContent = 'No images found';
           setTimeout(() => {
@@ -255,61 +255,49 @@ const ImageEnhancer = {
   },
 
   /**
-   * Fetch all gallery images from Reddit's JSON API.
+   * Get dimensions for all gallery images from the DOM.
+   * Reads naturalWidth/naturalHeight from already-loaded img elements
+   * in the gallery carousel. No network requests are made.
    * @param {string} postId
-   * @returns {Promise<Array<{url: string, filename: string}>>}
+   * @returns {Promise<Array<{width: number, height: number}|null>>}
    */
-  async _fetchGalleryImages(postId) {
-    const response = await fetch(
-      `https://www.reddit.com/comments/${postId}.json`,
-      { headers: { 'Accept': 'application/json' } }
+  async _getGalleryDimensions(postId) {
+    // Find the gallery carousel element
+    const carousel = document.querySelector(
+      'gallery-carousel, [data-testid="gallery-carousel"], .gallery-carousel, .media-gallery'
     );
-    if (!response.ok) return [];
+    if (!carousel) {
+      console.warn('[Reddit Image Saver] No gallery carousel found for dimensions');
+      return [];
+    }
 
-    const data = await response.json();
-    const post = data[0]?.data?.children?.[0]?.data;
-    if (!post) return [];
+    const imgElements = carousel.querySelectorAll('img[src*="redd.it"]');
+    if (imgElements.length === 0) {
+      console.warn('[Reddit Image Saver] No gallery images found in carousel');
+      return [];
+    }
 
-    const images = [];
+    const dimensions = [];
 
-    if (post.gallery_data && post.media_metadata) {
-      const items = post.gallery_data.items || [];
-      for (const item of items) {
-        const mediaId = item.media_id;
-        const metadata = post.media_metadata[mediaId];
-        if (!metadata) continue;
-
-        // Get the source URL from metadata
-        let imageUrl = null;
-        if (metadata.s) {
-          const rawUrl = metadata.s.u || metadata.s.gif;
-          if (rawUrl) {
-            imageUrl = rawUrl.replace(/&/g, '&');
-          }
-        }
-
-        // Build i.redd.it URL
-        if (imageUrl) {
-          const dlUrl = this._buildDownloadUrl(imageUrl);
-          const ext = metadata.m ? metadata.m.split('/')[1] : 'jpg';
-          const normalizedExt = ext === 'jpeg' ? 'jpg' : ext;
-          images.push({
-            url: dlUrl,
-            filename: `${mediaId}.${normalizedExt}`
-          });
+    for (const img of imgElements) {
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        // Image is already loaded — read dimensions directly
+        dimensions.push({ width: img.naturalWidth, height: img.naturalHeight });
+      } else {
+        // Image not yet loaded — try to load it via Image() constructor
+        // This loads from Reddit's image CDN (not the API), which is normal browser behavior
+        const src = img.src || img.getAttribute('data-src');
+        if (src && UrlUtils.isRedditImageUrl(src)) {
+          const dim = await this._getImageDimensions(UrlUtils.getBestUrl(src));
+          dimensions.push(dim);
         } else {
-          // Fallback: construct URL from media ID
-          const ext = metadata.m ? metadata.m.split('/')[1] : 'jpg';
-          const normalizedExt = ext === 'jpeg' ? 'jpg' : ext;
-          images.push({
-            url: `https://i.redd.it/${mediaId}.${normalizedExt}`,
-            filename: `${mediaId}.${normalizedExt}`
-          });
+          dimensions.push(null);
         }
       }
     }
 
-    return images;
+    console.log('[Reddit Image Saver] Gallery dimensions for', postId, ':', dimensions);
+    return dimensions;
   },
 
   /**
@@ -555,47 +543,6 @@ const ImageEnhancer = {
       img.onerror = () => resolve(null);
       img.src = url;
     });
-  },
-
-  /**
-   * Get dimensions for all gallery images from Reddit API.
-   * @param {string} postId
-   * @returns {Promise<Array<{width: number, height: number}|null>>}
-   */
-  async _getGalleryDimensions(postId) {
-    try {
-      const response = await fetch(
-        `https://www.reddit.com/comments/${postId}.json`,
-        { headers: { 'Accept': 'application/json' } }
-      );
-      if (!response.ok) {
-        console.warn('[Reddit Image Saver] Gallery dimensions fetch failed:', response.status);
-        return [];
-      }
-
-      const data = await response.json();
-      const post = data[0]?.data?.children?.[0]?.data;
-      if (!post?.gallery_data || !post?.media_metadata) {
-        console.warn('[Reddit Image Saver] No gallery_data or media_metadata for post', postId, 'post keys:', Object.keys(post || {}));
-        return [];
-      }
-
-      const items = post.gallery_data.items || [];
-      const dimensions = [];
-      for (const item of items) {
-        const metadata = post.media_metadata[item.media_id];
-        if (metadata?.s) {
-          dimensions.push({ width: metadata.s.x, height: metadata.s.y });
-        } else {
-          dimensions.push(null);
-        }
-      }
-      console.log('[Reddit Image Saver] Gallery dimensions for', postId, ':', dimensions);
-      return dimensions;
-    } catch (err) {
-      console.error('[Reddit Image Saver] Gallery dimensions error:', err);
-      return [];
-    }
   },
 
   /**

@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "i.redd.it",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "preview.redd.it",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "external-preview.redd.it",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "cf.preview.redd.it",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  },
+  {
+    "id": 11,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "set",
+          "value": "image/png,image/jpeg,image/gif,image/*;q=0.8,*/*;q=0.5"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "i.redd.it",
+      "resourceTypes": ["image", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 12,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "set",
+          "value": "image/png,image/jpeg,image/gif,image/*;q=0.8,*/*;q=0.5"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "preview.redd.it",
+      "resourceTypes": ["image", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 13,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "set",
+          "value": "image/png,image/jpeg,image/gif,image/*;q=0.8,*/*;q=0.5"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "external-preview.redd.it",
+      "resourceTypes": ["image", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 14,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Accept",
+          "operation": "set",
+          "value": "image/png,image/jpeg,image/gif,image/*;q=0.8,*/*;q=0.5"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "cf.preview.redd.it",
+      "resourceTypes": ["image", "xmlhttprequest"]
+    }
+  }
+]
